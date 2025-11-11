@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ausentismo diario (%) - Planta Victoria</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- html2canvas y jsPDF -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: rgba(15,23,42,0.35);
+      --line: rgba(148,163,184,0.08);
+      --accent: #10b981;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --table-hover: rgba(15,23,42,0.25);
+    }
+
+    :root[data-theme="light"] {
+      --bg: #e2e8f0;
+      --card: rgba(255,255,255,0.7);
+      --line: rgba(148,163,184,0.35);
+      --accent: #059669;
+      --text: #0f172a;
+      --muted: #475569;
+      --table-hover: rgba(226,232,240,.7);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top, var(--bg) 0%, #030712 65%);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      min-height: 100vh;
+      transition: background .25s, color .25s;
+    }
+    #relojBar {
+      position:fixed;
+      top:0;
+      left:0;
+      width:100%;
+      background:rgba(16,185,129,0.1);
+      color:#d1fae5;
+      text-align:center;
+      font-size:0.9rem;
+      padding:4px 0;
+      z-index:9999;
+      border-bottom:1px solid rgba(16,185,129,0.25);
+      backdrop-filter:blur(4px);
+    }
+    :root[data-theme="light"] #relojBar {
+      background: rgba(5,150,105,0.08);
+      color: #065f46;
+    }
+    header {
+      background: rgba(3,7,18,0.35);
+      border-bottom: 1px solid rgba(229,231,235,0.06);
+      backdrop-filter: blur(10px);
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      position: sticky;
+      top: 32px;
+      z-index: 10;
+      transition: background .25s;
+    }
+    :root[data-theme="light"] header {
+      background: rgba(255,255,255,0.6);
+      border-bottom: 1px solid rgba(148,163,184,.3);
+    }
+    header h1 { margin: 0; font-size: 1.1rem; }
+    header small { color: var(--muted); font-size: .7rem; }
+    .tag {
+      background: rgba(16,185,129,0.1);
+      border: 1px solid rgba(16,185,129,0.35);
+      border-radius: 9999px;
+      padding: .25rem .7rem;
+      font-size: .6rem;
+      text-transform: uppercase;
+    }
+    main {
+      display: grid;
+      grid-template-columns: 300px minmax(0,1fr);
+      gap: 1.5rem;
+      padding: 1.5rem;
+    }
+    .panel, .card {
+      background: var(--card);
+      border: 1px solid rgba(148,163,184,0.12);
+      border-radius: 1.25rem;
+      padding: 1rem;
+      backdrop-filter: blur(8px);
+      transition: background .25s;
+    }
+    label {
+      font-size: .7rem;
+      color: var(--muted);
+      display: block;
+      margin-bottom: .25rem;
+    }
+    input, textarea {
+      width: 100%;
+      background: rgba(15,23,42,0.25);
+      border: 1px solid rgba(148,163,184,0.12);
+      border-radius: .75rem;
+      padding: .45rem .6rem;
+      color: var(--text);
+      font-size: .75rem;
+      margin-bottom: .55rem;
+      transition: background .25s, color .25s, border .25s;
+    }
+    :root[data-theme="light"] input,
+    :root[data-theme="light"] textarea {
+      background: rgba(255,255,255,0.8);
+      border: 1px solid rgba(148,163,184,0.3);
+      color: #0f172a;
+    }
+    button {
+      border: none;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      padding: .55rem .9rem;
+      border-radius: .75rem;
+      font-size: .7rem;
+      cursor: pointer;
+      transition: .2s;
+    }
+    button:hover { transform: translateY(-1px); box-shadow: 0 10px 30px rgba(16,185,129,.25); }
+    .ghost-btn {
+      background: rgba(148,163,184,.05);
+      border: 1px solid rgba(148,163,184,.15);
+      color: #e2e8f0;
+    }
+    :root[data-theme="light"] .ghost-btn {
+      background: rgba(255,255,255,.35);
+      color: #0f172a;
+    }
+    .grid-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px,1fr));
+      gap: .75rem;
+      margin-bottom: 1rem;
+    }
+    .kpi {
+      background: radial-gradient(circle at top, rgba(16,185,129,0.08), rgba(15,23,42,0));
+      border: 1px solid rgba(148,163,184,0.05);
+      border-radius: 1rem;
+      padding: .6rem .7rem;
+    }
+    .kpi span { font-size: .6rem; color: var(--muted); text-transform: uppercase; }
+    .kpi strong { display: block; font-size: 1.15rem; margin-top: .35rem; }
+    .table-wrapper {
+      max-height: 240px;
+      overflow: auto;
+      border-radius: .75rem;
+      border: 1px solid rgba(148,163,184,0.05);
+    }
+    table { width: 100%; border-collapse: collapse; font-size: .65rem; }
+    thead { background: rgba(15,23,42,0.35); position: sticky; top: 0; }
+    :root[data-theme="light"] thead { background: rgba(255,255,255,0.6); }
+    th, td { padding: .4rem .5rem; border-bottom: 1px solid rgba(148,163,184,0.03); white-space: nowrap; }
+    tr:hover { background: var(--table-hover); }
+    .actions-table button {
+      background: rgba(15,23,42,0.25);
+      border: 1px solid rgba(148,163,184,0.2);
+      padding: .25rem .45rem;
+      border-radius: .45rem;
+      font-size: .6rem;
+      margin-right: .25rem;
+    }
+    :root[data-theme="light"] .actions-table button {
+      background: rgba(255,255,255,.4);
+      color: #0f172a;
+    }
+    /* loader */
+    #loader {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at top, #111827 0%, #020617 70%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 1rem;
+      z-index: 999;
+    }
+    .loader-bar {
+      width: 240px;
+      height: 8px;
+      background: rgba(148,163,184,0.12);
+      border-radius: 9999px;
+      overflow: hidden;
+      border: 1px solid rgba(148,163,184,0.05);
+    }
+    .loader-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(135deg, #10b981 0%, #22c55e 50%, #ecfeff 100%);
+      transition: width .1s;
+    }
+    .hidden { display: none !important; }
+    @media (max-width: 900px) {
+      main { grid-template-columns: 1fr; }
+      header { top: 34px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- barra de fecha y hora -->
+  <div id="relojBar">
+    📅 <span id="fechaActual"></span> — ⏰ <span id="horaActual"></span>
+  </div>
+
+  <!-- loader -->
+  <div id="loader">
+    <div>
+      <h2 style="text-align:center;">Cargando Ausentismo Victoria…</h2>
+      <p id="loaderValue" style="text-align:center;">0%</p>
+    </div>
+    <div class="loader-bar">
+      <div class="loader-bar-fill" id="loaderFill"></div>
+    </div>
+    <small id="loaderText" style="color:#94a3b8;">Inicializando módulo…</small>
+  </div>
+
+  <header>
+    <div>
+      <h1>📊 Ausentismo diario (%) – Planta Victoria</h1>
+      <small>1 dato por día + objetivo mensual</small>
+    </div>
+    <div style="display:flex;gap:.5rem;align-items:center;">
+      <button id="btnPDF" class="ghost-btn">📄 PDF General</button>
+      <input type="month" id="mesReporte" style="background:rgba(15,23,42,0.25);border:1px solid rgba(148,163,184,0.2);border-radius:.5rem;padding:.25rem .35rem;font-size:.65rem;color:inherit;">
+      <button id="btnPDFMes" class="ghost-btn">📄 PDF Mes</button>
+      <button id="btnTema" class="ghost-btn" title="Cambiar tema">🌙</button>
+      <div class="tag">LocalStorage ON</div>
+    </div>
+  </header>
+
+  <main>
+    <!-- panel izquierdo -->
+    <section class="panel">
+      <h2>➕ Cargar % de ausentismo</h2>
+      <form id="formAusencia">
+        <label for="fecha">Fecha</label>
+        <input type="date" id="fecha" required />
+
+        <label for="pct">Porcentaje de ausentismo (%)</label>
+        <input type="number" id="pct" min="0" max="100" step="0.01" placeholder="Ej: 2.5" required />
+
+        <label for="obs">Observaciones</label>
+        <textarea id="obs" rows="2" placeholder="Ej: ausencias médicas, licencias, etc."></textarea>
+
+        <small id="modoEdicion" style="display:none;color:#f97316;font-size:.6rem;margin-bottom:.5rem;display:block;"></small>
+
+        <button type="submit">Guardar día</button>
+      </form>
+
+      <hr style="border:0;border-bottom:1px solid rgba(148,163,184,.08);margin:1rem 0;">
+
+      <h2 style="margin-top:0.5rem;">🎯 Objetivo mensual</h2>
+      <label for="mesObjetivo">Mes</label>
+      <input type="month" id="mesObjetivo" />
+
+      <label for="pctObjetivo">% objetivo del mes</label>
+      <input type="number" id="pctObjetivo" min="0" max="100" step="0.01" placeholder="Ej: 2.0" />
+
+      <button id="btnGuardarObjetivo" style="width:100%;margin-bottom:.75rem;">Guardar objetivo</button>
+
+      <button id="btnBorrar" style="background:rgba(239,68,68,.2);border:1px solid rgba(239,68,68,.45);color:#fee2e2;width:100%">🧨 Borrar todo</button>
+    </section>
+
+    <!-- dashboard -->
+    <section class="card" id="reporteArea">
+      <div class="grid-cards">
+        <div class="kpi">
+          <span>Días cargados</span>
+          <strong id="kpiDias">0</strong>
+          <small id="kpiUltimo" style="color:var(--muted);font-size:.6rem;">Sin datos</small>
+        </div>
+        <div class="kpi">
+          <span>Promedio mes actual</span>
+          <strong id="kpiPromMes">0%</strong>
+          <small id="kpiMes" style="color:var(--muted);font-size:.6rem;">-</small>
+        </div>
+        <div class="kpi">
+          <span>Pico de ausentismo</span>
+          <strong id="kpiPico">0%</strong>
+          <small style="color:var(--muted);font-size:.6rem;">día más alto</small>
+        </div>
+        <div class="kpi">
+          <span>% último día</span>
+          <strong id="kpiUltimoPct">0%</strong>
+          <small style="color:var(--muted);font-size:.6rem;">último registro</small>
+        </div>
+      </div>
+
+      <h2>📈 % Ausentismo diario vs Objetivo</h2>
+      <canvas id="ausentismoChart" height="120"></canvas>
+
+      <h2 style="margin-top:1.25rem;">📋 Registros</h2>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr><th>Fecha</th><th>% Ausentismo</th><th>Obs</th><th>Acciones</th></tr>
+          </thead>
+          <tbody id="tbodyAusencias"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- contenedor oculto para PDF mensual -->
+  <section id="reporteMes" style="position:absolute; left:-9999px; top:-9999px; width:800px; background:#0f172a; padding:1rem;">
+    <h2 style="margin-top:0;">Reporte mensual de ausentismo</h2>
+    <p id="tituloMes"></p>
+    <div id="tablaMes"></div>
+  </section>
+
+  <script>
+    /* ===== FECHA Y HORA EN VIVO ===== */
+    function actualizarReloj() {
+      const ahora = new Date();
+      const fecha = ahora.toLocaleDateString('es-AR', {
+        weekday: 'long',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+      const hora = ahora.toLocaleTimeString('es-AR', { hour12: false });
+      document.getElementById('fechaActual').textContent = fecha.charAt(0).toUpperCase() + fecha.slice(1);
+      document.getElementById('horaActual').textContent = hora;
+    }
+    setInterval(actualizarReloj, 1000);
+    actualizarReloj();
+
+    /* ===== LOADER 3s ===== */
+    const loader = document.getElementById('loader');
+    const loaderValue = document.getElementById('loaderValue');
+    const loaderFill = document.getElementById('loaderFill');
+    const loaderText = document.getElementById('loaderText');
+    const frases = ["Inicializando módulo…","Calculando indicadores…","Armando dashboard…","Listo 👌"];
+    let fIdx = 0;
+    setInterval(() => {
+      loaderText.textContent = frases[fIdx % frases.length];
+      fIdx++;
+    }, 750);
+    let loaderPercent = 0;
+    const totalDuration = 3000;
+    const steps = 100;
+    const intervalTime = totalDuration / steps;
+    const loaderInterval = setInterval(() => {
+      loaderPercent += 1;
+      if (loaderPercent >= 100) {
+        loaderPercent = 100;
+        clearInterval(loaderInterval);
+        hideLoader();
+      }
+      loaderValue.textContent = loaderPercent + "%";
+      loaderFill.style.width = loaderPercent + "%";
+    }, intervalTime);
+    function hideLoader() {
+      loader.classList.add('hidden');
+    }
+    window.addEventListener('load', () => setTimeout(hideLoader, 3100));
+
+    /* ===== STORAGE ===== */
+    const STORAGE_KEY = 'ausentismoVictoria_pct_simple';
+    const STORAGE_OBJ = 'ausentismoVictoria_objetivos';
+    const STORAGE_THEME = 'ausentismoVictoria_theme';
+    let datos = [];
+    let objetivos = {};
+    let editandoFecha = null;
+
+    function cargarDesdeLS() {
+      datos = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      objetivos = JSON.parse(localStorage.getItem(STORAGE_OBJ) || "{}");
+      const th = localStorage.getItem(STORAGE_THEME);
+      if (th) {
+        document.documentElement.setAttribute('data-theme', th);
+        document.getElementById('btnTema').textContent = th === 'light' ? '🌙' : '☀️';
+      }
+    }
+    function guardarEnLS() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(datos));
+    }
+    function guardarObjetivos() {
+      localStorage.setItem(STORAGE_OBJ, JSON.stringify(objetivos));
+    }
+    function guardarTema(theme) {
+      localStorage.setItem(STORAGE_THEME, theme);
+    }
+
+    /* ===== ELEMENTOS ===== */
+    const form = document.getElementById('formAusencia');
+    const tbody = document.getElementById('tbodyAusencias');
+    const btnBorrar = document.getElementById('btnBorrar');
+    const btnPDF = document.getElementById('btnPDF');
+    const btnPDFMes = document.getElementById('btnPDFMes');
+    const mesReporte = document.getElementById('mesReporte');
+    const mesObjetivo = document.getElementById('mesObjetivo');
+    const pctObjetivo = document.getElementById('pctObjetivo');
+    const btnGuardarObjetivo = document.getElementById('btnGuardarObjetivo');
+    const btnTema = document.getElementById('btnTema');
+    const modoEdicion = document.getElementById('modoEdicion');
+
+    const kpiDias = document.getElementById('kpiDias');
+    const kpiUltimo = document.getElementById('kpiUltimo');
+    const kpiPromMes = document.getElementById('kpiPromMes');
+    const kpiMes = document.getElementById('kpiMes');
+    const kpiPico = document.getElementById('kpiPico');
+    const kpiUltimoPct = document.getElementById('kpiUltimoPct');
+
+    /* ===== TABLA ===== */
+    function actualizarTabla() {
+      tbody.innerHTML = '';
+      const ordenados = [...datos].sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
+      for (const reg of ordenados) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${reg.fecha}</td>
+          <td>${reg.pct.toFixed(2)}%</td>
+          <td>${reg.obs || ''}</td>
+          <td class="actions-table">
+            <button data-fecha="${reg.fecha}" class="btnEdit">✏️</button>
+            <button data-fecha="${reg.fecha}" class="btnDel">🗑️</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      }
+
+      // eventos de edición
+      document.querySelectorAll('.btnEdit').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const fecha = btn.getAttribute('data-fecha');
+          const item = datos.find(d => d.fecha === fecha);
+          if (item) {
+            document.getElementById('fecha').value = item.fecha;
+            document.getElementById('pct').value = item.pct;
+            document.getElementById('obs').value = item.obs || '';
+            editandoFecha = item.fecha;
+            modoEdicion.style.display = 'block';
+            modoEdicion.textContent = 'Modo edición: ' + item.fecha;
+          }
+        });
+      });
+
+      // eventos de borrado
+      document.querySelectorAll('.btnDel').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const fecha = btn.getAttribute('data-fecha');
+          if (confirm('¿Eliminar el día ' + fecha + '?')) {
+            datos = datos.filter(d => d.fecha !== fecha);
+            guardarEnLS();
+            actualizarTabla();
+            actualizarKPIs();
+            actualizarGrafico();
+            if (editandoFecha === fecha) {
+              editandoFecha = null;
+              modoEdicion.style.display = 'none';
+              form.reset();
+            }
+          }
+        });
+      });
+    }
+
+    /* ===== KPIs ===== */
+    function getMesActual() {
+      return new Date().toISOString().slice(0,7);
+    }
+    function actualizarKPIs() {
+      kpiDias.textContent = datos.length;
+      if (datos.length) {
+        const ordenados = [...datos].sort((a,b)=> new Date(b.fecha) - new Date(a.fecha));
+        const ult = ordenados[0];
+        kpiUltimo.textContent = 'Último: ' + ult.fecha;
+        kpiUltimoPct.textContent = ult.pct.toFixed(2) + '%';
+      } else {
+        kpiUltimo.textContent = 'Sin datos';
+        kpiUltimoPct.textContent = '0%';
+      }
+      const mesAct = getMesActual();
+      kpiMes.textContent = mesAct;
+      const delMes = datos.filter(d => d.fecha.startsWith(mesAct));
+      if (delMes.length) {
+        const prom = delMes.reduce((acc,cur)=> acc + cur.pct, 0) / delMes.length;
+        kpiPromMes.textContent = prom.toFixed(2) + '%';
+      } else {
+        kpiPromMes.textContent = '0%';
+      }
+      let maxPct = 0;
+      datos.forEach(d => { if (d.pct > maxPct) maxPct = d.pct; });
+      kpiPico.textContent = maxPct.toFixed(2) + '%';
+    }
+
+    /* ===== GRÁFICO ===== */
+    let chartRef = null;
+    function generarSerie() {
+      const ord = [...datos].sort((a,b)=> new Date(a.fecha) - new Date(b.fecha));
+      const labels = ord.map(d => d.fecha);
+      const values = ord.map(d => Number(d.pct.toFixed(2)));
+      const objetivosSerie = ord.map(d => {
+        const mes = d.fecha.slice(0,7);
+        return typeof objetivos[mes] === 'number' ? Number(objetivos[mes].toFixed(2)) : null;
+      });
+      return { labels, values, objetivosSerie };
+    }
+    function mediaMovil(vals, n = 3) {
+      const out = [];
+      for (let i = 0; i < vals.length; i++) {
+        const inicio = Math.max(0, i - (n - 1));
+        const sub = vals.slice(inicio, i + 1);
+        const prom = sub.reduce((a,b)=> a + b, 0) / sub.length;
+        out.push(Number(prom.toFixed(2)));
+      }
+      return out;
+    }
+    function actualizarGrafico() {
+      const { labels, values, objetivosSerie } = generarSerie();
+      const mm = mediaMovil(values, 3);
+      const ctx = document.getElementById('ausentismoChart').getContext('2d');
+      const data = {
+        labels,
+        datasets: [
+          {
+            label: '% ausentismo',
+            data: values,
+            borderColor: 'rgba(16,185,129,1)',
+            backgroundColor: 'rgba(16,185,129,.25)',
+            tension: .25,
+            fill: true
+          },
+          {
+            label: 'Media móvil (3)',
+            data: mm,
+            borderColor: 'rgba(59,130,246,1)',
+            backgroundColor: 'transparent',
+            borderDash: [5,5],
+            tension: .15
+          },
+          {
+            label: 'Objetivo mensual',
+            data: objetivosSerie,
+            borderColor: 'rgba(239,68,68,1)',
+            backgroundColor: 'transparent',
+            borderDash: [2,2],
+            pointRadius: 0,
+            spanGaps: true
+          }
+        ]
+      };
+      if (chartRef) {
+        chartRef.data = data;
+        chartRef.update();
+      } else {
+        chartRef = new Chart(ctx, {
+          type: 'line',
+          data,
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { labels: { color: '#e2e8f0', font: { size: 10 } } }
+            },
+            scales: {
+              x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,.05)' } },
+              y: {
+                ticks: { color: '#94a3b8', callback: v => v + '%' },
+                grid: { color: 'rgba(148,163,184,.05)' },
+                beginAtZero: true
+              }
+            }
+          }
+        });
+      }
+    }
+
+    /* ===== PDF GENERAL ===== */
+    btnPDF.addEventListener('click', async () => {
+      const area = document.getElementById('reporteArea');
+      const canvas = await html2canvas(area, { backgroundColor:'#0f172a', scale:2 });
+      const imgData = canvas.toDataURL('image/png');
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF('p','mm','a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      pdf.setFontSize(12);
+      pdf.text('Reporte general de ausentismo % - Planta Victoria', 10, 10);
+      pdf.setFontSize(9);
+      pdf.text('Generado: ' + new Date().toLocaleString(), 10, 16);
+      pdf.addImage(imgData, 'PNG', 10, 20, pdfWidth - 20, pdfHeight);
+      pdf.save('reporte-ausentismo-general.pdf');
+    });
+
+    /* ===== PDF POR MES ===== */
+    btnPDFMes.addEventListener('click', async () => {
+      const mesSel = mesReporte.value;
+      if (!mesSel) {
+        alert('Elegí un mes primero');
+        return;
+      }
+      const filtrados = datos.filter(d => d.fecha.startsWith(mesSel));
+      const tablaMes = document.getElementById('tablaMes');
+      const tituloMes = document.getElementById('tituloMes');
+      tituloMes.textContent = 'Mes: ' + mesSel + ' – Registros: ' + filtrados.length + (objetivos[mesSel] ? ' – Obj: ' + objetivos[mesSel].toFixed(2) + '%' : '');
+      let html = '<table style="width:100%;border-collapse:collapse;font-size:12px;color:#e2e8f0;">';
+      html += '<tr><th style="border-bottom:1px solid #334155;text-align:left;">Fecha</th><th style="border-bottom:1px solid #334155;text-align:left;">% Ausentismo</th><th style="border-bottom:1px solid #334155;text-align:left;">Obs</th></tr>';
+      filtrados.forEach(d => {
+        html += `<tr>
+          <td style="padding:3px 0;">${d.fecha}</td>
+          <td>${d.pct.toFixed(2)}%</td>
+          <td>${d.obs || ''}</td>
+        </tr>`;
+      });
+      html += '</table>';
+      tablaMes.innerHTML = html;
+
+      const area = document.getElementById('reporteMes');
+      const canvas = await html2canvas(area, { backgroundColor:'#0f172a', scale:2 });
+      const imgData = canvas.toDataURL('image/png');
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF('p','mm','a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      pdf.setFontSize(12);
+      pdf.text('Reporte mensual de ausentismo % - ' + mesSel, 10, 10);
+      pdf.setFontSize(9);
+      pdf.text('Generado: ' + new Date().toLocaleString(), 10, 16);
+      pdf.addImage(imgData, 'PNG', 10, 20, pdfWidth - 20, pdfHeight);
+      pdf.save('reporte-ausentismo-' + mesSel + '.pdf');
+    });
+
+    /* ===== GUARDAR OBJETIVO ===== */
+    btnGuardarObjetivo.addEventListener('click', () => {
+      const mes = mesObjetivo.value;
+      const pct = Number(pctObjetivo.value);
+      if (!mes || isNaN(pct)) {
+        alert('Cargá mes y % objetivo');
+        return;
+      }
+      objetivos[mes] = pct;
+      guardarObjetivos();
+      actualizarGrafico();
+      alert('Objetivo guardado para ' + mes);
+    });
+
+    /* ===== FORM SUBMIT ===== */
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const fecha = document.getElementById('fecha').value;
+      const pct = Number(document.getElementById('pct').value);
+      const obs = document.getElementById('obs').value;
+      if (!fecha) return;
+      const registro = { fecha, pct, obs };
+
+      const idx = datos.findIndex(d => d.fecha === fecha);
+      if (idx >= 0) datos[idx] = registro;
+      else datos.push(registro);
+
+      guardarEnLS();
+      actualizarTabla();
+      actualizarKPIs();
+      actualizarGrafico();
+
+      editandoFecha = null;
+      modoEdicion.style.display = 'none';
+
+      form.reset();
+      document.getElementById('fecha').value = fecha;
+    });
+
+    /* ===== BORRAR TODO ===== */
+    btnBorrar.addEventListener('click', () => {
+      if (confirm('¿Seguro que querés borrar todos los registros?')) {
+        datos = [];
+        guardarEnLS();
+        actualizarTabla();
+        actualizarKPIs();
+        actualizarGrafico();
+        editandoFecha = null;
+        modoEdicion.style.display = 'none';
+      }
+    });
+
+    /* ===== TEMA ===== */
+    btnTema.addEventListener('click', () => {
+      const actual = document.documentElement.getAttribute('data-theme') || 'dark';
+      const nuevo = actual === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', nuevo);
+      guardarTema(nuevo);
+      btnTema.textContent = nuevo === 'light' ? '🌙' : '☀️';
+    });
+
+    /* ===== INIT ===== */
+    (function init(){
+      cargarDesdeLS();
+      actualizarTabla();
+      actualizarKPIs();
+      actualizarGrafico();
+      const hoy = new Date().toISOString().slice(0,10);
+      document.getElementById('fecha').value = hoy;
+      document.getElementById('mesReporte').value = hoy.slice(0,7);
+      document.getElementById('mesObjetivo').value = hoy.slice(0,7);
+    })();
+  </script>
+</body>
+</html>
+
