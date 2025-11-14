@@ -1,720 +1,1367 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Ausentismo diario (%) - Planta Victoria</title>
+  <title>📈 Live Trading Analyzer PRO</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- html2canvas y jsPDF -->
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
   <style>
     :root {
-      --bg: #0f172a;
-      --card: rgba(15,23,42,0.35);
-      --line: rgba(148,163,184,0.08);
-      --accent: #10b981;
+      --bg: #020617;
+      --bg-soft: #020617;
+      --panel: #020617;
+      --card: #020617;
+      --border: #1f2937;
+      --accent: #22c55e;
+      --accent-soft: rgba(34, 197, 94, 0.15);
+      --accent-alt: #38bdf8;
+      --danger: #ef4444;
+      --danger-soft: rgba(239, 68, 68, 0.15);
+      --muted: #6b7280;
       --text: #e5e7eb;
-      --muted: #9ca3af;
-      --table-hover: rgba(15,23,42,0.25);
+      --text-soft: #9ca3af;
+      --shadow-soft: 0 20px 40px rgba(0, 0, 0, 0.7);
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-pill: 999px;
     }
 
-    :root[data-theme="light"] {
-      --bg: #e2e8f0;
-      --card: rgba(255,255,255,0.7);
-      --line: rgba(148,163,184,0.35);
-      --accent: #059669;
-      --text: #0f172a;
-      --muted: #475569;
-      --table-hover: rgba(226,232,240,.7);
-    }
-
-    * { box-sizing: border-box; }
-    body {
+    * {
+      box-sizing: border-box;
       margin: 0;
-      background: radial-gradient(circle at top, var(--bg) 0%, #030712 65%);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      padding: 0;
+    }
+
+    html,
+    body {
+      height: 100%;
+      background: radial-gradient(circle at top, #111827 0, #020617 55%, #000 100%);
       color: var(--text);
-      min-height: 100vh;
-      transition: background .25s, color .25s;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
     }
-    #relojBar {
-      position:fixed;
-      top:0;
-      left:0;
-      width:100%;
-      background:rgba(16,185,129,0.1);
-      color:#d1fae5;
-      text-align:center;
-      font-size:0.9rem;
-      padding:4px 0;
-      z-index:9999;
-      border-bottom:1px solid rgba(16,185,129,0.25);
-      backdrop-filter:blur(4px);
-    }
-    :root[data-theme="light"] #relojBar {
-      background: rgba(5,150,105,0.08);
-      color: #065f46;
-    }
-    header {
-      background: rgba(3,7,18,0.35);
-      border-bottom: 1px solid rgba(229,231,235,0.06);
-      backdrop-filter: blur(10px);
-      padding: 1rem 1.5rem;
+
+    body {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 1rem;
-      position: sticky;
-      top: 32px;
-      z-index: 10;
-      transition: background .25s;
+      align-items: stretch;
+      justify-content: center;
+      padding: 16px;
     }
-    :root[data-theme="light"] header {
-      background: rgba(255,255,255,0.6);
-      border-bottom: 1px solid rgba(148,163,184,.3);
-    }
-    header h1 { margin: 0; font-size: 1.1rem; }
-    header small { color: var(--muted); font-size: .7rem; }
-    .tag {
-      background: rgba(16,185,129,0.1);
-      border: 1px solid rgba(16,185,129,0.35);
-      border-radius: 9999px;
-      padding: .25rem .7rem;
-      font-size: .6rem;
-      text-transform: uppercase;
-    }
-    main {
-      display: grid;
-      grid-template-columns: 300px minmax(0,1fr);
-      gap: 1.5rem;
-      padding: 1.5rem;
-    }
-    .panel, .card {
-      background: var(--card);
-      border: 1px solid rgba(148,163,184,0.12);
-      border-radius: 1.25rem;
-      padding: 1rem;
-      backdrop-filter: blur(8px);
-      transition: background .25s;
-    }
-    label {
-      font-size: .7rem;
-      color: var(--muted);
-      display: block;
-      margin-bottom: .25rem;
-    }
-    input, textarea {
+
+    .app-shell {
       width: 100%;
-      background: rgba(15,23,42,0.25);
-      border: 1px solid rgba(148,163,184,0.12);
-      border-radius: .75rem;
-      padding: .45rem .6rem;
-      color: var(--text);
-      font-size: .75rem;
-      margin-bottom: .55rem;
-      transition: background .25s, color .25s, border .25s;
+      max-width: 1200px;
+      margin: auto;
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(3, 7, 18, 0.98));
+      border-radius: 24px;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
-    :root[data-theme="light"] input,
-    :root[data-theme="light"] textarea {
-      background: rgba(255,255,255,0.8);
-      border: 1px solid rgba(148,163,184,0.3);
-      color: #0f172a;
+
+    /* HEADER */
+
+    header {
+      padding: 16px 20px 8px;
+      border-bottom: 1px solid rgba(31, 41, 55, 0.9);
+      backdrop-filter: blur(16px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
     }
-    button {
-      border: none;
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      color: white;
-      padding: .55rem .9rem;
-      border-radius: .75rem;
-      font-size: .7rem;
-      cursor: pointer;
-      transition: .2s;
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
-    button:hover { transform: translateY(-1px); box-shadow: 0 10px 30px rgba(16,185,129,.25); }
-    .ghost-btn {
-      background: rgba(148,163,184,.05);
-      border: 1px solid rgba(148,163,184,.15);
-      color: #e2e8f0;
-    }
-    :root[data-theme="light"] .ghost-btn {
-      background: rgba(255,255,255,.35);
-      color: #0f172a;
-    }
-    .grid-cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(170px,1fr));
-      gap: .75rem;
-      margin-bottom: 1rem;
-    }
-    .kpi {
-      background: radial-gradient(circle at top, rgba(16,185,129,0.08), rgba(15,23,42,0));
-      border: 1px solid rgba(148,163,184,0.05);
-      border-radius: 1rem;
-      padding: .6rem .7rem;
-    }
-    .kpi span { font-size: .6rem; color: var(--muted); text-transform: uppercase; }
-    .kpi strong { display: block; font-size: 1.15rem; margin-top: .35rem; }
-    .table-wrapper {
-      max-height: 240px;
-      overflow: auto;
-      border-radius: .75rem;
-      border: 1px solid rgba(148,163,184,0.05);
-    }
-    table { width: 100%; border-collapse: collapse; font-size: .65rem; }
-    thead { background: rgba(15,23,42,0.35); position: sticky; top: 0; }
-    :root[data-theme="light"] thead { background: rgba(255,255,255,0.6); }
-    th, td { padding: .4rem .5rem; border-bottom: 1px solid rgba(148,163,184,0.03); white-space: nowrap; }
-    tr:hover { background: var(--table-hover); }
-    .actions-table button {
-      background: rgba(15,23,42,0.25);
-      border: 1px solid rgba(148,163,184,0.2);
-      padding: .25rem .45rem;
-      border-radius: .45rem;
-      font-size: .6rem;
-      margin-right: .25rem;
-    }
-    :root[data-theme="light"] .actions-table button {
-      background: rgba(255,255,255,.4);
-      color: #0f172a;
-    }
-    /* loader */
-    #loader {
-      position: fixed;
-      inset: 0;
-      background: radial-gradient(circle at top, #111827 0%, #020617 70%);
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 16px;
+      background: radial-gradient(circle at 30% 0, #22c55e 0, #16a34a 35%, #4ade80 60%, #22c55e 100%);
       display: flex;
       align-items: center;
       justify-content: center;
+      box-shadow: 0 0 25px rgba(34, 197, 94, 0.7);
+      font-size: 20px;
+    }
+
+    .brand-text {
+      display: flex;
       flex-direction: column;
-      gap: 1rem;
-      z-index: 999;
+      gap: 2px;
     }
-    .loader-bar {
-      width: 240px;
+
+    .brand-title {
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .brand-title span.highlight {
+      color: #22c55e;
+    }
+
+    .brand-subtitle {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .badge-live {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      border: 1px solid rgba(34, 197, 94, 0.6);
+      background: linear-gradient(135deg, rgba(22, 163, 74, 0.18), rgba(22, 163, 74, 0.03));
+      font-size: 11px;
+      color: #bbf7d0;
+    }
+
+    .dot-pulse {
+      width: 8px;
       height: 8px;
-      background: rgba(148,163,184,0.12);
-      border-radius: 9999px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 8px rgba(34, 197, 94, 0.9);
+      position: relative;
+    }
+
+    .dot-pulse::after {
+      content: "";
+      position: absolute;
+      inset: -4px;
+      border-radius: inherit;
+      border: 1px solid rgba(74, 222, 128, 0.8);
+      animation: ping 1.3s cubic-bezier(0, 0, 0.2, 1) infinite;
+    }
+
+    @keyframes ping {
+      0% {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      100% {
+        transform: scale(1.9);
+        opacity: 0;
+      }
+    }
+
+    .connection-status {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      border: 1px solid rgba(75, 85, 99, 0.7);
+      color: var(--text-soft);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: radial-gradient(circle at top left, rgba(148, 163, 184, 0.22), rgba(15, 23, 42, 0.7));
+    }
+
+    .connection-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #f97316;
+    }
+
+    .connection-dot.ok {
+      background: #22c55e;
+      box-shadow: 0 0 10px rgba(34, 197, 94, 0.9);
+    }
+
+    .connection-dot.off {
+      background: #ef4444;
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.7);
+    }
+
+    /* CONTROLES */
+
+    .toolbar {
+      padding: 8px 20px 14px;
+      border-bottom: 1px solid rgba(31, 41, 55, 0.9);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .toolbar-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .field label {
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .field-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    select,
+    button {
+      font-family: inherit;
+      border-radius: var(--radius-pill);
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      background: radial-gradient(circle at top, #0b1120, #020617);
+      color: var(--text);
+      font-size: 13px;
+      padding: 7px 14px;
+      outline: none;
+      min-width: 0;
+    }
+
+    select {
+      padding-right: 28px;
+      appearance: none;
+      background-image:
+        linear-gradient(45deg, transparent 50%, #6b7280 50%),
+        linear-gradient(135deg, #6b7280 50%, transparent 50%);
+      background-position:
+        calc(100% - 13px) 11px,
+        calc(100% - 8px) 11px;
+      background-size: 5px 5px, 5px 5px;
+      background-repeat: no-repeat;
+    }
+
+    button {
+      border-radius: var(--radius-pill);
+      border: 1px solid rgba(34, 197, 94, 0.7);
+      background: radial-gradient(circle at top left, #22c55e, #15803d);
+      color: #ecfdf3;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding-inline: 16px;
+      cursor: pointer;
+      box-shadow: 0 0 18px rgba(34, 197, 94, 0.45);
+      transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.08s ease;
+    }
+
+    button span.icon {
+      font-size: 15px;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.04);
+      box-shadow: 0 0 22px rgba(34, 197, 94, 0.7);
+    }
+
+    button:active {
+      transform: translateY(0);
+      filter: brightness(0.98);
+      box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+    }
+
+    /* MAIN GRID */
+
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+      gap: 14px;
+      padding: 14px 16px 16px;
+    }
+
+    @media (max-width: 880px) {
+      main {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .card {
+      background: radial-gradient(circle at top left, rgba(31, 41, 55, 0.9), rgba(15, 23, 42, 0.98));
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(31, 41, 55, 0.95);
+      box-shadow: 0 16px 28px rgba(0, 0, 0, 0.7);
+      padding: 14px 14px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: relative;
       overflow: hidden;
-      border: 1px solid rgba(148,163,184,0.05);
     }
-    .loader-bar-fill {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(135deg, #10b981 0%, #22c55e 50%, #ecfeff 100%);
-      transition: width .1s;
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top right, rgba(34, 197, 94, 0.12), transparent 50%);
+      opacity: 0.8;
+      pointer-events: none;
     }
-    .hidden { display: none !important; }
-    @media (max-width: 900px) {
-      main { grid-template-columns: 1fr; }
-      header { top: 34px; }
+
+    .card-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 6px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .card-title {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--text-soft);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .pill {
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: var(--radius-pill);
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+    }
+
+    .card-body {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* LEFT PANEL (PRICE & EMAs) */
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    @media (max-width: 640px) {
+      .metrics-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    .metric {
+      padding: 8px 10px;
+      border-radius: 14px;
+      background: radial-gradient(circle at top, rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.98));
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-height: 62px;
+    }
+
+    .metric.primary {
+      grid-column: span 2;
+    }
+
+    .metric-label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.13em;
+    }
+
+    .metric-value {
+      font-size: 22px;
+      line-height: 1.1;
+      font-weight: 600;
+    }
+
+    .metric-value.sm {
+      font-size: 15px;
+    }
+
+    .metric-sub {
+      font-size: 11px;
+      color: var(--text-soft);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .chip {
+      border-radius: var(--radius-pill);
+      padding: 2px 7px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      color: var(--muted);
+    }
+
+    .metric-variation {
+      font-size: 11px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .metric-variation.up {
+      color: #4ade80;
+    }
+
+    .metric-variation.down {
+      color: #fb7185;
+    }
+
+    .metric-variation.neutral {
+      color: var(--muted);
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+    }
+
+    .dot.green {
+      background: #22c55e;
+      box-shadow: 0 0 8px rgba(34, 197, 94, 0.9);
+    }
+
+    .dot.red {
+      background: #ef4444;
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
+    }
+
+    .dot.gray {
+      background: #6b7280;
+    }
+
+    .signal-banner {
+      margin-top: 4px;
+      padding: 8px 10px;
+      border-radius: 14px;
+      border: 1px solid rgba(55, 65, 81, 0.95);
+      background: radial-gradient(circle at left, rgba(34, 197, 94, 0.05), rgba(15, 23, 42, 1));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 12px;
+    }
+
+    .signal-banner .tag {
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .tag-buy {
+      background: var(--accent-soft);
+      border: 1px solid rgba(34, 197, 94, 0.9);
+      color: #bbf7d0;
+    }
+
+    .tag-sell {
+      background: var(--danger-soft);
+      border: 1px solid rgba(239, 68, 68, 0.9);
+      color: #fecaca;
+    }
+
+    .tag-flat {
+      background: rgba(148, 163, 184, 0.16);
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      color: #e5e7eb;
+    }
+
+    .signal-detail {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .signal-detail span {
+      font-size: 11px;
+      color: var(--text-soft);
+    }
+
+    /* RIGHT PANEL (STATS + SIGNALS TABLE) */
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    @media (max-width: 640px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    .stat-card {
+      padding: 7px 8px;
+      border-radius: 12px;
+      border: 1px solid rgba(55, 65, 81, 0.95);
+      background: radial-gradient(circle at top, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 1));
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-height: 50px;
+    }
+
+    .stat-label {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--muted);
+    }
+
+    .stat-value {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .stat-sub {
+      font-size: 10px;
+      color: var(--text-soft);
+    }
+
+    .stat-value.green {
+      color: #4ade80;
+    }
+
+    .stat-value.red {
+      color: #fb7185;
+    }
+
+    .signals-table-wrapper {
+      max-height: 230px;
+      overflow: hidden auto;
+      border-radius: 12px;
+      border: 1px solid rgba(31, 41, 55, 0.9);
+      background: radial-gradient(circle at top left, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 1));
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+
+    thead {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: linear-gradient(to bottom, rgba(15, 23, 42, 1), rgba(15, 23, 42, 0.96));
+    }
+
+    th,
+    td {
+      padding: 6px 10px;
+      text-align: left;
+      border-bottom: 1px solid rgba(31, 41, 55, 0.9);
+      white-space: nowrap;
+    }
+
+    th {
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--muted);
+      font-weight: 500;
+      font-size: 10px;
+    }
+
+    tbody tr:nth-child(even) {
+      background: rgba(15, 23, 42, 0.9);
+    }
+
+    tbody tr:hover {
+      background: rgba(51, 65, 85, 0.8);
+    }
+
+    .badge {
+      padding: 2px 8px;
+      border-radius: var(--radius-pill);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .badge-buy {
+      background: var(--accent-soft);
+      color: #bbf7d0;
+      border: 1px solid rgba(34, 197, 94, 0.9);
+    }
+
+    .badge-sell {
+      background: var(--danger-soft);
+      color: #fecaca;
+      border: 1px solid rgba(239, 68, 68, 0.9);
+    }
+
+    .badge-flat {
+      background: rgba(148, 163, 184, 0.16);
+      color: #e5e7eb;
+      border: 1px solid rgba(148, 163, 184, 0.8);
+    }
+
+    /* FOOTER */
+
+    footer {
+      padding: 8px 16px 10px;
+      border-top: 1px solid rgba(31, 41, 55, 0.9);
+      font-size: 11px;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .footer-section {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .footer-section span.label {
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      font-size: 10px;
+      color: #6b7280;
+    }
+
+    .mono {
+      font-family: "SF Mono", ui-monospace, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    .hint {
+      color: #9ca3af;
+    }
+
+    .hint strong {
+      color: #e5e7eb;
+      font-weight: 600;
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #020617;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #4b5563;
+      border-radius: 999px;
     }
   </style>
 </head>
 <body>
-
-  <!-- barra de fecha y hora -->
-  <div id="relojBar">
-    📅 <span id="fechaActual"></span> — ⏰ <span id="horaActual"></span>
-  </div>
-
-  <!-- loader -->
-  <div id="loader">
-    <div>
-      <h2 style="text-align:center;">Cargando Ausentismo Victoria…</h2>
-      <p id="loaderValue" style="text-align:center;">0%</p>
-    </div>
-    <div class="loader-bar">
-      <div class="loader-bar-fill" id="loaderFill"></div>
-    </div>
-    <small id="loaderText" style="color:#94a3b8;">Inicializando módulo…</small>
-  </div>
-
-  <header>
-    <div>
-      <h1>📊 Ausentismo diario (%) – Planta Victoria</h1>
-      <small>1 dato por día + objetivo mensual</small>
-    </div>
-    <div style="display:flex;gap:.5rem;align-items:center;">
-      <button id="btnPDF" class="ghost-btn">📄 PDF General</button>
-      <input type="month" id="mesReporte" style="background:rgba(15,23,42,0.25);border:1px solid rgba(148,163,184,0.2);border-radius:.5rem;padding:.25rem .35rem;font-size:.65rem;color:inherit;">
-      <button id="btnPDFMes" class="ghost-btn">📄 PDF Mes</button>
-      <button id="btnTema" class="ghost-btn" title="Cambiar tema">🌙</button>
-      <div class="tag">LocalStorage ON</div>
-    </div>
-  </header>
-
-  <main>
-    <!-- panel izquierdo -->
-    <section class="panel">
-      <h2>➕ Cargar % de ausentismo</h2>
-      <form id="formAusencia">
-        <label for="fecha">Fecha</label>
-        <input type="date" id="fecha" required />
-
-        <label for="pct">Porcentaje de ausentismo (%)</label>
-        <input type="number" id="pct" min="0" max="100" step="0.01" placeholder="Ej: 2.5" required />
-
-        <label for="obs">Observaciones</label>
-        <textarea id="obs" rows="2" placeholder="Ej: ausencias médicas, licencias, etc."></textarea>
-
-        <small id="modoEdicion" style="display:none;color:#f97316;font-size:.6rem;margin-bottom:.5rem;display:block;"></small>
-
-        <button type="submit">Guardar día</button>
-      </form>
-
-      <hr style="border:0;border-bottom:1px solid rgba(148,163,184,.08);margin:1rem 0;">
-
-      <h2 style="margin-top:0.5rem;">🎯 Objetivo mensual</h2>
-      <label for="mesObjetivo">Mes</label>
-      <input type="month" id="mesObjetivo" />
-
-      <label for="pctObjetivo">% objetivo del mes</label>
-      <input type="number" id="pctObjetivo" min="0" max="100" step="0.01" placeholder="Ej: 2.0" />
-
-      <button id="btnGuardarObjetivo" style="width:100%;margin-bottom:.75rem;">Guardar objetivo</button>
-
-      <button id="btnBorrar" style="background:rgba(239,68,68,.2);border:1px solid rgba(239,68,68,.45);color:#fee2e2;width:100%">🧨 Borrar todo</button>
-    </section>
-
-    <!-- dashboard -->
-    <section class="card" id="reporteArea">
-      <div class="grid-cards">
-        <div class="kpi">
-          <span>Días cargados</span>
-          <strong id="kpiDias">0</strong>
-          <small id="kpiUltimo" style="color:var(--muted);font-size:.6rem;">Sin datos</small>
+  <div class="app-shell">
+    <header>
+      <div class="brand">
+        <div class="brand-icon">⚡</div>
+        <div class="brand-text">
+          <div class="brand-title">
+            LIVE<span class="highlight">SCANNER</span> PRO
+          </div>
+          <div class="brand-subtitle">EMAS · SEÑALES · BACKTEST EN TIEMPO REAL</div>
         </div>
-        <div class="kpi">
-          <span>Promedio mes actual</span>
-          <strong id="kpiPromMes">0%</strong>
-          <small id="kpiMes" style="color:var(--muted);font-size:.6rem;">-</small>
+      </div>
+      <div class="header-right">
+        <div class="badge-live">
+          <div class="dot-pulse"></div>
+          EN TIEMPO REAL
         </div>
-        <div class="kpi">
-          <span>Pico de ausentismo</span>
-          <strong id="kpiPico">0%</strong>
-          <small style="color:var(--muted);font-size:.6rem;">día más alto</small>
+        <div class="connection-status">
+          <div id="statusDot" class="connection-dot off"></div>
+          <span id="statusText">Desconectado</span>
         </div>
-        <div class="kpi">
-          <span>% último día</span>
-          <strong id="kpiUltimoPct">0%</strong>
-          <small style="color:var(--muted);font-size:.6rem;">último registro</small>
+      </div>
+    </header>
+
+    <div class="toolbar">
+      <div class="toolbar-group">
+        <div class="field">
+          <label>Símbolo</label>
+          <div class="field-row">
+            <select id="symbolSelect">
+              <option value="BTCUSDT">BTC/USDT</option>
+              <option value="ETHUSDT">ETH/USDT</option>
+              <option value="BNBUSDT">BNB/USDT</option>
+              <option value="PEPEUSDT">PEPE/USDT</option>
+              <option value="SOLUSDT">SOL/USDT</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Timeframe</label>
+          <div class="field-row">
+            <select id="intervalSelect">
+              <option value="1m">1m</option>
+              <option value="5m">5m</option>
+              <option value="15m">15m</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      <h2>📈 % Ausentismo diario vs Objetivo</h2>
-      <canvas id="ausentismoChart" height="120"></canvas>
-
-      <h2 style="margin-top:1.25rem;">📋 Registros</h2>
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr><th>Fecha</th><th>% Ausentismo</th><th>Obs</th><th>Acciones</th></tr>
-          </thead>
-          <tbody id="tbodyAusencias"></tbody>
-        </table>
+      <div class="toolbar-group">
+        <div class="field">
+          <label>EMAs</label>
+          <div class="field-row">
+            <span class="chip">Rápida 9 · Lenta 21</span>
+          </div>
+        </div>
+        <button id="connectBtn">
+          <span class="icon">🚀</span>
+          <span>Conectar / Reset</span>
+        </button>
       </div>
-    </section>
-  </main>
+    </div>
 
-  <!-- contenedor oculto para PDF mensual -->
-  <section id="reporteMes" style="position:absolute; left:-9999px; top:-9999px; width:800px; background:#0f172a; padding:1rem;">
-    <h2 style="margin-top:0;">Reporte mensual de ausentismo</h2>
-    <p id="tituloMes"></p>
-    <div id="tablaMes"></div>
-  </section>
+    <main>
+      <!-- LEFT: PRICE & INDICATORS -->
+      <section class="card">
+        <div class="card-header">
+          <div class="card-title">
+            SNAPSHOT DE MERCADO
+          </div>
+          <div class="pill" id="symbolLabel">BTCUSDT · 1M</div>
+        </div>
+        <div class="card-body">
+          <div class="metrics-grid">
+            <div class="metric primary">
+              <div class="metric-label">Precio actual</div>
+              <div id="priceValue" class="metric-value">– – –</div>
+              <div class="metric-sub">
+                <span id="priceChange" class="metric-variation neutral">
+                  <span class="dot gray"></span>
+                  Sin variación
+                </span>
+              </div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Cierre vela actual</div>
+              <div id="lastClose" class="metric-value sm mono">– – –</div>
+              <div class="metric-sub">
+                <span id="lastCandleInfo">Esperando datos…</span>
+              </div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">EMA 9 vs EMA 21</div>
+              <div class="metric-value sm">
+                <span id="ema9Value" class="mono">– – –</span>
+                &nbsp;/&nbsp;
+                <span id="ema21Value" class="mono">– – –</span>
+              </div>
+              <div class="metric-sub">
+                <span id="emaState">Sin cálculo suficiente…</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="signal-banner" id="signalBanner">
+            <div id="signalTag" class="tag tag-flat">Sin señal</div>
+            <div class="signal-detail">
+              <span id="signalText">Esperando el primer cruce de EMAs…</span>
+              <span id="signalMeta" class="mono">– – –</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT: STATS + SIGNALS LIST -->
+      <section class="card">
+        <div class="card-header">
+          <div class="card-title">
+            HISTORIAL & ESTADÍSTICAS
+          </div>
+          <div class="pill">EMAs · Cruces · Trades simulados</div>
+        </div>
+        <div class="card-body">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-label">Señales</div>
+              <div id="statSignals" class="stat-value">0</div>
+              <div class="stat-sub">Total LONG + SHORT</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Trades</div>
+              <div id="statTrades" class="stat-value">0</div>
+              <div class="stat-sub">Se cierra al cambio de color</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Winrate</div>
+              <div id="statWinrate" class="stat-value green">–</div>
+              <div class="stat-sub">% trades con PnL &gt; 0</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Pnl Promedio</div>
+              <div id="statAvgPnl" class="stat-value">–</div>
+              <div class="stat-sub">% por trade</div>
+            </div>
+          </div>
+
+          <div class="signals-table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Hora</th>
+                  <th>Tipo</th>
+                  <th>Precio</th>
+                  <th>EMA9</th>
+                  <th>EMA21</th>
+                </tr>
+              </thead>
+              <tbody id="signalsBody">
+                <!-- Se llena por JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="footer-section">
+        <span class="label">Stream</span>
+        <span id="footerStream" class="mono">–</span>
+      </div>
+      <div class="footer-section">
+        <span class="label">Posición</span>
+        <span id="footerPosition" class="mono">Sin posición abierta</span>
+      </div>
+      <div class="footer-section">
+        <span class="hint">
+          Guardá este archivo como <strong>trading-analyzer-pro.html</strong> y abrilo en el navegador.
+        </span>
+      </div>
+    </footer>
+  </div>
 
   <script>
-    /* ===== FECHA Y HORA EN VIVO ===== */
-    function actualizarReloj() {
-      const ahora = new Date();
-      const fecha = ahora.toLocaleDateString('es-AR', {
-        weekday: 'long',
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
+    // --- ESTADO GLOBAL ---
+    let socket = null;
+    let closes = [];
+    let ema9 = null;
+    let ema21 = null;
+    let lastPrice = null;
+    let lastSignal = null; // "BUY" | "SELL" | null
+    let prevEma9 = null;
+    let prevEma21 = null;
+
+    const K_EMA9 = 2 / (9 + 1);
+    const K_EMA21 = 2 / (21 + 1);
+
+    // Arrays para backtest live
+    let signals = [];      // { type, price, ema9, ema21, ts }
+    let trades = [];       // { side, entry, exit, pnlPct, tsEntry, tsExit }
+    let openPosition = null; // { side: "LONG"/"SHORT", entryPrice, tsEntry }
+
+    // --- HELPERS ---
+
+    function formatNumber(num, decimals = 2) {
+      if (num === null || num === undefined || Number.isNaN(num)) return "–";
+      return Number(num).toLocaleString("en-US", {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
       });
-      const hora = ahora.toLocaleTimeString('es-AR', { hour12: false });
-      document.getElementById('fechaActual').textContent = fecha.charAt(0).toUpperCase() + fecha.slice(1);
-      document.getElementById('horaActual').textContent = hora;
     }
-    setInterval(actualizarReloj, 1000);
-    actualizarReloj();
 
-    /* ===== LOADER 3s ===== */
-    const loader = document.getElementById('loader');
-    const loaderValue = document.getElementById('loaderValue');
-    const loaderFill = document.getElementById('loaderFill');
-    const loaderText = document.getElementById('loaderText');
-    const frases = ["Inicializando módulo…","Calculando indicadores…","Armando dashboard…","Listo 👌"];
-    let fIdx = 0;
-    setInterval(() => {
-      loaderText.textContent = frases[fIdx % frases.length];
-      fIdx++;
-    }, 750);
-    let loaderPercent = 0;
-    const totalDuration = 3000;
-    const steps = 100;
-    const intervalTime = totalDuration / steps;
-    const loaderInterval = setInterval(() => {
-      loaderPercent += 1;
-      if (loaderPercent >= 100) {
-        loaderPercent = 100;
-        clearInterval(loaderInterval);
-        hideLoader();
+    function formatPriceBySymbol(symbol, price) {
+      if (price === null || price === undefined) return "– – –";
+      const s = symbol.toUpperCase();
+      if (s.endsWith("USDT")) {
+        if (s.startsWith("PEPE")) return formatNumber(price, 6);
+        if (price >= 1000) return formatNumber(price, 1);
+        return formatNumber(price, 2);
       }
-      loaderValue.textContent = loaderPercent + "%";
-      loaderFill.style.width = loaderPercent + "%";
-    }, intervalTime);
-    function hideLoader() {
-      loader.classList.add('hidden');
+      return formatNumber(price, 6);
     }
-    window.addEventListener('load', () => setTimeout(hideLoader, 3100));
 
-    /* ===== STORAGE ===== */
-    const STORAGE_KEY = 'ausentismoVictoria_pct_simple';
-    const STORAGE_OBJ = 'ausentismoVictoria_objetivos';
-    const STORAGE_THEME = 'ausentismoVictoria_theme';
-    let datos = [];
-    let objetivos = {};
-    let editandoFecha = null;
+    function formatTime(ts) {
+      const d = new Date(ts);
+      return d.toLocaleTimeString("es-AR", { hour12: false });
+    }
 
-    function cargarDesdeLS() {
-      datos = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-      objetivos = JSON.parse(localStorage.getItem(STORAGE_OBJ) || "{}");
-      const th = localStorage.getItem(STORAGE_THEME);
-      if (th) {
-        document.documentElement.setAttribute('data-theme', th);
-        document.getElementById('btnTema').textContent = th === 'light' ? '🌙' : '☀️';
+    function computeEMA(prevEma, price, k) {
+      if (prevEma === null) return price;
+      return (price - prevEma) * k + prevEma;
+    }
+
+    // --- DOM ELEMENTS ---
+
+    const symbolSelect = document.getElementById("symbolSelect");
+    const intervalSelect = document.getElementById("intervalSelect");
+    const connectBtn = document.getElementById("connectBtn");
+
+    const statusDot = document.getElementById("statusDot");
+    const statusText = document.getElementById("statusText");
+    const symbolLabel = document.getElementById("symbolLabel");
+
+    const priceValue = document.getElementById("priceValue");
+    const priceChange = document.getElementById("priceChange");
+    const lastCloseEl = document.getElementById("lastClose");
+    const lastCandleInfo = document.getElementById("lastCandleInfo");
+    const ema9Value = document.getElementById("ema9Value");
+    const ema21Value = document.getElementById("ema21Value");
+    const emaState = document.getElementById("emaState");
+
+    const signalBanner = document.getElementById("signalBanner");
+    const signalTag = document.getElementById("signalTag");
+    const signalText = document.getElementById("signalText");
+    const signalMeta = document.getElementById("signalMeta");
+    const signalsBody = document.getElementById("signalsBody");
+
+    const footerStream = document.getElementById("footerStream");
+    const footerPosition = document.getElementById("footerPosition");
+
+    const statSignals = document.getElementById("statSignals");
+    const statTrades = document.getElementById("statTrades");
+    const statWinrate = document.getElementById("statWinrate");
+    const statAvgPnl = document.getElementById("statAvgPnl");
+
+    // --- UI STATE ---
+
+    function setConnectionState(state, message) {
+      statusDot.classList.remove("ok", "off");
+      if (state === "connected") {
+        statusDot.classList.add("ok");
+        statusText.textContent = message || "Conectado";
+      } else if (state === "connecting") {
+        statusText.textContent = message || "Conectando…";
+      } else {
+        statusDot.classList.add("off");
+        statusText.textContent = message || "Desconectado";
       }
     }
-    function guardarEnLS() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(datos));
-    }
-    function guardarObjetivos() {
-      localStorage.setItem(STORAGE_OBJ, JSON.stringify(objetivos));
-    }
-    function guardarTema(theme) {
-      localStorage.setItem(STORAGE_THEME, theme);
+
+    function setPriceDisplay(symbol, price) {
+      if (price === null) {
+        priceValue.textContent = "– – –";
+        return;
+      }
+      priceValue.textContent = formatPriceBySymbol(symbol, price);
     }
 
-    /* ===== ELEMENTOS ===== */
-    const form = document.getElementById('formAusencia');
-    const tbody = document.getElementById('tbodyAusencias');
-    const btnBorrar = document.getElementById('btnBorrar');
-    const btnPDF = document.getElementById('btnPDF');
-    const btnPDFMes = document.getElementById('btnPDFMes');
-    const mesReporte = document.getElementById('mesReporte');
-    const mesObjetivo = document.getElementById('mesObjetivo');
-    const pctObjetivo = document.getElementById('pctObjetivo');
-    const btnGuardarObjetivo = document.getElementById('btnGuardarObjetivo');
-    const btnTema = document.getElementById('btnTema');
-    const modoEdicion = document.getElementById('modoEdicion');
-
-    const kpiDias = document.getElementById('kpiDias');
-    const kpiUltimo = document.getElementById('kpiUltimo');
-    const kpiPromMes = document.getElementById('kpiPromMes');
-    const kpiMes = document.getElementById('kpiMes');
-    const kpiPico = document.getElementById('kpiPico');
-    const kpiUltimoPct = document.getElementById('kpiUltimoPct');
-
-    /* ===== TABLA ===== */
-    function actualizarTabla() {
-      tbody.innerHTML = '';
-      const ordenados = [...datos].sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
-      for (const reg of ordenados) {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${reg.fecha}</td>
-          <td>${reg.pct.toFixed(2)}%</td>
-          <td>${reg.obs || ''}</td>
-          <td class="actions-table">
-            <button data-fecha="${reg.fecha}" class="btnEdit">✏️</button>
-            <button data-fecha="${reg.fecha}" class="btnDel">🗑️</button>
-          </td>
-        `;
-        tbody.appendChild(tr);
+    function setPriceChangeDisplay(basePrice, currentPrice) {
+      if (!basePrice || !currentPrice) {
+        priceChange.className = "metric-variation neutral";
+        priceChange.innerHTML = '<span class="dot gray"></span> Sin variación';
+        return;
       }
 
-      // eventos de edición
-      document.querySelectorAll('.btnEdit').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const fecha = btn.getAttribute('data-fecha');
-          const item = datos.find(d => d.fecha === fecha);
-          if (item) {
-            document.getElementById('fecha').value = item.fecha;
-            document.getElementById('pct').value = item.pct;
-            document.getElementById('obs').value = item.obs || '';
-            editandoFecha = item.fecha;
-            modoEdicion.style.display = 'block';
-            modoEdicion.textContent = 'Modo edición: ' + item.fecha;
-          }
+      const diff = currentPrice - basePrice;
+      const pct = (diff / basePrice) * 100;
+
+      if (Math.abs(pct) < 0.01) {
+        priceChange.className = "metric-variation neutral";
+        priceChange.innerHTML = '<span class="dot gray"></span> ' +
+          pct.toFixed(2) + "%";
+      } else if (pct > 0) {
+        priceChange.className = "metric-variation up";
+        priceChange.innerHTML = '<span class="dot green"></span> +' +
+          pct.toFixed(2) + "%";
+      } else {
+        priceChange.className = "metric-variation down";
+        priceChange.innerHTML = '<span class="dot red"></span> ' +
+          pct.toFixed(2) + "%";
+      }
+    }
+
+    function updateEmaDisplay(symbol) {
+      ema9Value.textContent = formatPriceBySymbol(symbol, ema9);
+      ema21Value.textContent = formatPriceBySymbol(symbol, ema21);
+
+      if (ema9 === null || ema21 === null) {
+        emaState.textContent = "Esperando más velas para estabilizar EMAs…";
+        return;
+      }
+
+      if (ema9 > ema21) {
+        emaState.textContent = "Sesgo alcista (EMA 9 por encima de EMA 21)";
+      } else if (ema9 < ema21) {
+        emaState.textContent = "Sesgo bajista (EMA 9 por debajo de EMA 21)";
+      } else {
+        emaState.textContent = "EMAs prácticamente iguales (zona de equilibrio)";
+      }
+    }
+
+    function setSignalBanner(type, price, symbol, ts) {
+      let cls = "tag-flat";
+      let label = "Sin señal";
+      let text = "Esperando el primer cruce de EMAs…";
+
+      if (type === "BUY") {
+        cls = "tag-buy";
+        label = "LONG";
+        text = "Cruce alcista: EMA 9 cruza por ENCIMA de EMA 21.";
+      } else if (type === "SELL") {
+        cls = "tag-sell";
+        label = "SHORT";
+        text = "Cruce bajista: EMA 9 cruza por DEBAJO de EMA 21.";
+      }
+
+      signalTag.className = "tag " + cls;
+      signalTag.textContent = label;
+      signalText.textContent = text;
+
+      if (type && price != null) {
+        signalMeta.textContent =
+          `${formatTime(ts)} · ${symbol.toUpperCase()} @ ${formatPriceBySymbol(symbol, price)}`;
+      } else {
+        signalMeta.textContent = "– – –";
+      }
+    }
+
+    function appendSignalRow(type, price, symbol, ema9Val, ema21Val, ts) {
+      const tr = document.createElement("tr");
+
+      const tdTime = document.createElement("td");
+      tdTime.textContent = formatTime(ts);
+      tr.appendChild(tdTime);
+
+      const tdType = document.createElement("td");
+      const badge = document.createElement("span");
+      badge.classList.add("badge");
+      if (type === "BUY") {
+        badge.classList.add("badge-buy");
+        badge.textContent = "LONG";
+      } else if (type === "SELL") {
+        badge.classList.add("badge-sell");
+        badge.textContent = "SHORT";
+      } else {
+        badge.classList.add("badge-flat");
+        badge.textContent = "FLAT";
+      }
+      tdType.appendChild(badge);
+      tr.appendChild(tdType);
+
+      const tdPrice = document.createElement("td");
+      tdPrice.textContent = formatPriceBySymbol(symbol, price);
+      tr.appendChild(tdPrice);
+
+      const tdEma9 = document.createElement("td");
+      tdEma9.textContent = formatPriceBySymbol(symbol, ema9Val);
+      tr.appendChild(tdEma9);
+
+      const tdEma21 = document.createElement("td");
+      tdEma21.textContent = formatPriceBySymbol(symbol, ema21Val);
+      tr.appendChild(tdEma21);
+
+      signalsBody.insertBefore(tr, signalsBody.firstChild);
+
+      while (signalsBody.rows.length > 50) {
+        signalsBody.deleteRow(signalsBody.rows.length - 1);
+      }
+    }
+
+    function updatePositionFooter(symbol) {
+      if (!openPosition) {
+        footerPosition.textContent = "Sin posición abierta";
+        return;
+      }
+      const sideText = openPosition.side === "LONG" ? "LONG" : "SHORT";
+      const entry = formatPriceBySymbol(symbol, openPosition.entryPrice);
+      footerPosition.textContent =
+        `${sideText} @ ${entry} · ${formatTime(openPosition.tsEntry)}`;
+    }
+
+    function updateStatsUI() {
+      const totalSignals = signals.length;
+      const totalTrades = trades.length;
+
+      statSignals.textContent = totalSignals;
+      statTrades.textContent = totalTrades;
+
+      if (totalTrades === 0) {
+        statWinrate.textContent = "–";
+        statAvgPnl.textContent = "–";
+        statWinrate.classList.remove("green", "red");
+        return;
+      }
+
+      const wins = trades.filter(t => t.pnlPct > 0).length;
+      const winrate = (wins / totalTrades) * 100;
+
+      let sumPnl = 0;
+      for (const t of trades) sumPnl += t.pnlPct;
+      const avgPnl = sumPnl / totalTrades;
+
+      statWinrate.textContent = winrate.toFixed(1) + "%";
+      statAvgPnl.textContent = avgPnl.toFixed(2) + "%";
+
+      statWinrate.classList.remove("green", "red");
+      if (winrate >= 50) {
+        statWinrate.classList.add("green");
+      } else {
+        statWinrate.classList.add("red");
+      }
+    }
+
+    function handleTradeLogic(signalType, price, ts) {
+      if (signalType !== "BUY" && signalType !== "SELL") return;
+      const sideNew = signalType === "BUY" ? "LONG" : "SHORT";
+
+      // Si hay posición abierta y el nuevo lado es opuesto -> cerramos trade
+      if (openPosition && openPosition.side !== sideNew) {
+        let pnlPct = 0;
+        if (openPosition.side === "LONG") {
+          pnlPct = ((price - openPosition.entryPrice) / openPosition.entryPrice) * 100;
+        } else if (openPosition.side === "SHORT") {
+          pnlPct = ((openPosition.entryPrice - price) / openPosition.entryPrice) * 100;
+        }
+
+        trades.push({
+          side: openPosition.side,
+          entry: openPosition.entryPrice,
+          exit: price,
+          pnlPct,
+          tsEntry: openPosition.tsEntry,
+          tsExit: ts
         });
+
+        openPosition = null;
+      }
+
+      // Si no hay posición abierta, abrimos una con el nuevo lado
+      if (!openPosition) {
+        openPosition = {
+          side: sideNew,
+          entryPrice: price,
+          tsEntry: ts
+        };
+      }
+
+      updatePositionFooter(symbolSelect.value);
+      updateStatsUI();
+    }
+
+    function registerSignal(type, price, symbol, ema9Val, ema21Val, ts) {
+      signals.push({
+        type,
+        price,
+        ema9: ema9Val,
+        ema21: ema21Val,
+        ts
       });
 
-      // eventos de borrado
-      document.querySelectorAll('.btnDel').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const fecha = btn.getAttribute('data-fecha');
-          if (confirm('¿Eliminar el día ' + fecha + '?')) {
-            datos = datos.filter(d => d.fecha !== fecha);
-            guardarEnLS();
-            actualizarTabla();
-            actualizarKPIs();
-            actualizarGrafico();
-            if (editandoFecha === fecha) {
-              editandoFecha = null;
-              modoEdicion.style.display = 'none';
-              form.reset();
-            }
+      appendSignalRow(type, price, symbol, ema9Val, ema21Val, ts);
+      handleTradeLogic(type, price, ts);
+      updateStatsUI();
+    }
+
+    function resetState() {
+      closes = [];
+      ema9 = null;
+      ema21 = null;
+      prevEma9 = null;
+      prevEma21 = null;
+      lastPrice = null;
+      lastSignal = null;
+
+      signals = [];
+      trades = [];
+      openPosition = null;
+
+      signalsBody.innerHTML = "";
+      lastCloseEl.textContent = "– – –";
+      lastCandleInfo.textContent = "Esperando datos…";
+      setPriceDisplay(symbolSelect.value, null);
+      setPriceChangeDisplay(null, null);
+      updateEmaDisplay(symbolSelect.value);
+      setSignalBanner(null, null, symbolSelect.value, Date.now());
+      updatePositionFooter(symbolSelect.value);
+      updateStatsUI();
+    }
+
+    // --- WEBSOCKET & DATA ---
+
+    async function loadInitialKlines(symbol, interval) {
+      const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=60`;
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const data = await res.json();
+        closes = data.map(row => parseFloat(row[4]));
+        if (closes.length > 0) {
+          lastPrice = closes[closes.length - 1];
+        }
+        ema9 = null;
+        ema21 = null;
+        prevEma9 = null;
+        prevEma21 = null;
+        for (let i = 0; i < closes.length; i++) {
+          const c = closes[i];
+          ema9 = computeEMA(ema9, c, K_EMA9);
+          ema21 = computeEMA(ema21, c, K_EMA21);
+          if (i === closes.length - 2) {
+            prevEma9 = ema9;
+            prevEma21 = ema21;
           }
-        });
-      });
+        }
+        setPriceDisplay(symbol, lastPrice);
+        setPriceChangeDisplay(closes[0], lastPrice);
+        updateEmaDisplay(symbol);
+        lastCloseEl.textContent = formatPriceBySymbol(symbol, lastPrice);
+        lastCandleInfo.textContent = `Histórico precargado (${closes.length} velas)`;
+      } catch (err) {
+        console.error("Error al cargar klines:", err);
+        lastCandleInfo.textContent = "Error al precargar velas, se usará solo stream en vivo.";
+      }
     }
 
-    /* ===== KPIs ===== */
-    function getMesActual() {
-      return new Date().toISOString().slice(0,7);
-    }
-    function actualizarKPIs() {
-      kpiDias.textContent = datos.length;
-      if (datos.length) {
-        const ordenados = [...datos].sort((a,b)=> new Date(b.fecha) - new Date(a.fecha));
-        const ult = ordenados[0];
-        kpiUltimo.textContent = 'Último: ' + ult.fecha;
-        kpiUltimoPct.textContent = ult.pct.toFixed(2) + '%';
-      } else {
-        kpiUltimo.textContent = 'Sin datos';
-        kpiUltimoPct.textContent = '0%';
-      }
-      const mesAct = getMesActual();
-      kpiMes.textContent = mesAct;
-      const delMes = datos.filter(d => d.fecha.startsWith(mesAct));
-      if (delMes.length) {
-        const prom = delMes.reduce((acc,cur)=> acc + cur.pct, 0) / delMes.length;
-        kpiPromMes.textContent = prom.toFixed(2) + '%';
-      } else {
-        kpiPromMes.textContent = '0%';
-      }
-      let maxPct = 0;
-      datos.forEach(d => { if (d.pct > maxPct) maxPct = d.pct; });
-      kpiPico.textContent = maxPct.toFixed(2) + '%';
-    }
+    function connectStream() {
+      const symbol = symbolSelect.value.toUpperCase();
+      const interval = intervalSelect.value;
 
-    /* ===== GRÁFICO ===== */
-    let chartRef = null;
-    function generarSerie() {
-      const ord = [...datos].sort((a,b)=> new Date(a.fecha) - new Date(b.fecha));
-      const labels = ord.map(d => d.fecha);
-      const values = ord.map(d => Number(d.pct.toFixed(2)));
-      const objetivosSerie = ord.map(d => {
-        const mes = d.fecha.slice(0,7);
-        return typeof objetivos[mes] === 'number' ? Number(objetivos[mes].toFixed(2)) : null;
-      });
-      return { labels, values, objetivosSerie };
-    }
-    function mediaMovil(vals, n = 3) {
-      const out = [];
-      for (let i = 0; i < vals.length; i++) {
-        const inicio = Math.max(0, i - (n - 1));
-        const sub = vals.slice(inicio, i + 1);
-        const prom = sub.reduce((a,b)=> a + b, 0) / sub.length;
-        out.push(Number(prom.toFixed(2)));
+      resetState();
+      symbolLabel.textContent = `${symbol} · ${interval.toUpperCase()}`;
+      footerStream.textContent = `${symbol.toLowerCase()}@kline_${interval}`;
+
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.close(1000, "Reset connection");
       }
-      return out;
-    }
-    function actualizarGrafico() {
-      const { labels, values, objetivosSerie } = generarSerie();
-      const mm = mediaMovil(values, 3);
-      const ctx = document.getElementById('ausentismoChart').getContext('2d');
-      const data = {
-        labels,
-        datasets: [
-          {
-            label: '% ausentismo',
-            data: values,
-            borderColor: 'rgba(16,185,129,1)',
-            backgroundColor: 'rgba(16,185,129,.25)',
-            tension: .25,
-            fill: true
-          },
-          {
-            label: 'Media móvil (3)',
-            data: mm,
-            borderColor: 'rgba(59,130,246,1)',
-            backgroundColor: 'transparent',
-            borderDash: [5,5],
-            tension: .15
-          },
-          {
-            label: 'Objetivo mensual',
-            data: objetivosSerie,
-            borderColor: 'rgba(239,68,68,1)',
-            backgroundColor: 'transparent',
-            borderDash: [2,2],
-            pointRadius: 0,
-            spanGaps: true
+
+      setConnectionState("connecting", "Cargando velas iniciales…");
+
+      loadInitialKlines(symbol, interval).then(() => {
+        const streamName = `${symbol.toLowerCase()}@kline_${interval}`;
+        const url = `wss://stream.binance.com:9443/ws/${streamName}`;
+        socket = new WebSocket(url);
+
+        socket.onopen = () => {
+          setConnectionState("connected", "Conectado a Binance");
+        };
+
+        socket.onclose = () => {
+          setConnectionState("disconnected", "Desconectado");
+        };
+
+        socket.onerror = () => {
+          setConnectionState("disconnected", "Error de conexión");
+        };
+
+        socket.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+          const k = data.k;
+          const close = parseFloat(k.c);
+          const isFinal = k.x;
+          const openTime = k.t;
+          const closeTime = k.T;
+          lastPrice = close;
+
+          setPriceDisplay(symbol, lastPrice);
+          if (closes.length > 0) {
+            setPriceChangeDisplay(closes[0], lastPrice);
           }
-        ]
-      };
-      if (chartRef) {
-        chartRef.data = data;
-        chartRef.update();
-      } else {
-        chartRef = new Chart(ctx, {
-          type: 'line',
-          data,
-          options: {
-            responsive: true,
-            plugins: {
-              legend: { labels: { color: '#e2e8f0', font: { size: 10 } } }
-            },
-            scales: {
-              x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,.05)' } },
-              y: {
-                ticks: { color: '#94a3b8', callback: v => v + '%' },
-                grid: { color: 'rgba(148,163,184,.05)' },
-                beginAtZero: true
+
+          if (isFinal) {
+            closes.push(close);
+            if (closes.length > 300) closes.shift();
+
+            prevEma9 = ema9;
+            prevEma21 = ema21;
+
+            ema9 = computeEMA(ema9, close, K_EMA9);
+            ema21 = computeEMA(ema21, close, K_EMA21);
+
+            updateEmaDisplay(symbol);
+
+            lastCloseEl.textContent = formatPriceBySymbol(symbol, close);
+            lastCandleInfo.textContent =
+              `Vela cerrada · ${formatTime(closeTime)} · Vol: ${parseFloat(k.v).toFixed(3)}`;
+
+            if (
+              prevEma9 !== null &&
+              prevEma21 !== null &&
+              ema9 !== null &&
+              ema21 !== null
+            ) {
+              let newSignal = null;
+              if (prevEma9 <= prevEma21 && ema9 > ema21) {
+                newSignal = "BUY";
+              } else if (prevEma9 >= prevEma21 && ema9 < ema21) {
+                newSignal = "SELL";
+              }
+
+              if (newSignal && newSignal !== lastSignal) {
+                lastSignal = newSignal;
+                setSignalBanner(newSignal, close, symbol, closeTime);
+                registerSignal(newSignal, close, symbol, ema9, ema21, closeTime);
               }
             }
+          } else {
+            lastCandleInfo.textContent =
+              `Vela en curso · ${formatTime(openTime)} → ${formatTime(closeTime)}`;
           }
-        });
-      }
+        };
+      });
     }
 
-    /* ===== PDF GENERAL ===== */
-    btnPDF.addEventListener('click', async () => {
-      const area = document.getElementById('reporteArea');
-      const canvas = await html2canvas(area, { backgroundColor:'#0f172a', scale:2 });
-      const imgData = canvas.toDataURL('image/png');
-      const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF('p','mm','a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const imgProps = pdf.getImageProperties(imgData);
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-      pdf.setFontSize(12);
-      pdf.text('Reporte general de ausentismo % - Planta Victoria', 10, 10);
-      pdf.setFontSize(9);
-      pdf.text('Generado: ' + new Date().toLocaleString(), 10, 16);
-      pdf.addImage(imgData, 'PNG', 10, 20, pdfWidth - 20, pdfHeight);
-      pdf.save('reporte-ausentismo-general.pdf');
+    // --- EVENTOS UI ---
+
+    connectBtn.addEventListener("click", () => {
+      connectStream();
     });
 
-    /* ===== PDF POR MES ===== */
-    btnPDFMes.addEventListener('click', async () => {
-      const mesSel = mesReporte.value;
-      if (!mesSel) {
-        alert('Elegí un mes primero');
-        return;
-      }
-      const filtrados = datos.filter(d => d.fecha.startsWith(mesSel));
-      const tablaMes = document.getElementById('tablaMes');
-      const tituloMes = document.getElementById('tituloMes');
-      tituloMes.textContent = 'Mes: ' + mesSel + ' – Registros: ' + filtrados.length + (objetivos[mesSel] ? ' – Obj: ' + objetivos[mesSel].toFixed(2) + '%' : '');
-      let html = '<table style="width:100%;border-collapse:collapse;font-size:12px;color:#e2e8f0;">';
-      html += '<tr><th style="border-bottom:1px solid #334155;text-align:left;">Fecha</th><th style="border-bottom:1px solid #334155;text-align:left;">% Ausentismo</th><th style="border-bottom:1px solid #334155;text-align:left;">Obs</th></tr>';
-      filtrados.forEach(d => {
-        html += `<tr>
-          <td style="padding:3px 0;">${d.fecha}</td>
-          <td>${d.pct.toFixed(2)}%</td>
-          <td>${d.obs || ''}</td>
-        </tr>`;
-      });
-      html += '</table>';
-      tablaMes.innerHTML = html;
-
-      const area = document.getElementById('reporteMes');
-      const canvas = await html2canvas(area, { backgroundColor:'#0f172a', scale:2 });
-      const imgData = canvas.toDataURL('image/png');
-      const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF('p','mm','a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const imgProps = pdf.getImageProperties(imgData);
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-      pdf.setFontSize(12);
-      pdf.text('Reporte mensual de ausentismo % - ' + mesSel, 10, 10);
-      pdf.setFontSize(9);
-      pdf.text('Generado: ' + new Date().toLocaleString(), 10, 16);
-      pdf.addImage(imgData, 'PNG', 10, 20, pdfWidth - 20, pdfHeight);
-      pdf.save('reporte-ausentismo-' + mesSel + '.pdf');
+    symbolSelect.addEventListener("change", () => {
+      connectStream();
     });
 
-    /* ===== GUARDAR OBJETIVO ===== */
-    btnGuardarObjetivo.addEventListener('click', () => {
-      const mes = mesObjetivo.value;
-      const pct = Number(pctObjetivo.value);
-      if (!mes || isNaN(pct)) {
-        alert('Cargá mes y % objetivo');
-        return;
-      }
-      objetivos[mes] = pct;
-      guardarObjetivos();
-      actualizarGrafico();
-      alert('Objetivo guardado para ' + mes);
+    intervalSelect.addEventListener("change", () => {
+      connectStream();
     });
 
-    /* ===== FORM SUBMIT ===== */
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const fecha = document.getElementById('fecha').value;
-      const pct = Number(document.getElementById('pct').value);
-      const obs = document.getElementById('obs').value;
-      if (!fecha) return;
-      const registro = { fecha, pct, obs };
-
-      const idx = datos.findIndex(d => d.fecha === fecha);
-      if (idx >= 0) datos[idx] = registro;
-      else datos.push(registro);
-
-      guardarEnLS();
-      actualizarTabla();
-      actualizarKPIs();
-      actualizarGrafico();
-
-      editandoFecha = null;
-      modoEdicion.style.display = 'none';
-
-      form.reset();
-      document.getElementById('fecha').value = fecha;
+    // Arrancamos con la config por defecto
+    window.addEventListener("load", () => {
+      connectStream();
     });
-
-    /* ===== BORRAR TODO ===== */
-    btnBorrar.addEventListener('click', () => {
-      if (confirm('¿Seguro que querés borrar todos los registros?')) {
-        datos = [];
-        guardarEnLS();
-        actualizarTabla();
-        actualizarKPIs();
-        actualizarGrafico();
-        editandoFecha = null;
-        modoEdicion.style.display = 'none';
-      }
-    });
-
-    /* ===== TEMA ===== */
-    btnTema.addEventListener('click', () => {
-      const actual = document.documentElement.getAttribute('data-theme') || 'dark';
-      const nuevo = actual === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', nuevo);
-      guardarTema(nuevo);
-      btnTema.textContent = nuevo === 'light' ? '🌙' : '☀️';
-    });
-
-    /* ===== INIT ===== */
-    (function init(){
-      cargarDesdeLS();
-      actualizarTabla();
-      actualizarKPIs();
-      actualizarGrafico();
-      const hoy = new Date().toISOString().slice(0,10);
-      document.getElementById('fecha').value = hoy;
-      document.getElementById('mesReporte').value = hoy.slice(0,7);
-      document.getElementById('mesObjetivo').value = hoy.slice(0,7);
-    })();
   </script>
 </body>
 </html>
-
